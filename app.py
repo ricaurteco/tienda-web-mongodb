@@ -156,15 +156,22 @@ def actualizar_teclado():
 
 
 
-# EJERCICIO 10
-# Crear un producto desde Postman
+# EJERCICIO E3
+# Crear un producto validando que el precio sea mayor que cero
 @app.route("/api/productos", methods=["POST"])
 def crear_producto():
-    datos = request.get_json()
+    datos = request.get_json(silent=True)
 
     if not datos:
         return jsonify({
             "error": "No se recibieron datos"
+        }), 400
+
+    precio = datos.get("precio")
+
+    if not isinstance(precio, (int, float)) or precio <= 0:
+        return jsonify({
+            "error": "Precio inválido. Debe ser mayor que cero"
         }), 400
 
     resultado = col_productos.insert_one(datos)
@@ -173,7 +180,6 @@ def crear_producto():
         "id": str(resultado.inserted_id),
         "mensaje": "Producto creado correctamente"
     }), 201
-
 
 # EJERCICIO 11
 # Consultar un producto por su ID
