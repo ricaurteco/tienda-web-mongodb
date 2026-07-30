@@ -35,6 +35,10 @@ try:
 
     # Seleccionar las colecciones
     col_productos = db["productos"]
+    col_auditoria = db["auditoria"]
+
+
+    
 
     print("Conexión segura a MongoDB exitosa")
     print("BD conectada:", db.name)
