@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda MongoDB</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background: #f5f5f5;
+        }
+
+        h1,
+        h2 {
+            color: #13aa52;
+        }
+
+        .formulario {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            border-radius: 8px;
+        }
+
+        .formulario input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .formulario button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 5px;
+            background: #13aa52;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            background: #13aa52;
+            color: white;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .badge-true {
+            background: #dcfce7;
+            color: #166534;
+            padding: 4px 10px;
+            border-radius: 15px;
+        }
+
+        .badge-false {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 4px 10px;
+            border-radius: 15px;
+        }
+
+        .exito {
+            color: green;
+            font-weight: bold;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Tienda — Productos MongoDB</h1>
+
+    <h2>Agregar producto</h2>
+
+    <div class="formulario">
+        <input type="text" id="nombre" placeholder="Nombre">
+
+        <input type="number" id="precio" placeholder="Precio">
+
+        <input type="text" id="marca" placeholder="Marca">
+
+        <input type="text" id="categoria" placeholder="Categoría">
+
+        <input type="number" id="stock" placeholder="Stock">
+
+        <button onclick="agregarProducto()">
+            Agregar producto
+        </button>
+    </div>
+
+    <p id="mensaje"></p>
+
+    <p id="contador">Cargando productos...</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Marca</th>
+                <th>Categoría</th>
+                <th>Stock</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+
+        <tbody id="tabla-body"></tbody>
+    </table>
+
+    <script>
+        function cargarProductos() {
+            fetch("/api/productos")
+                .then(respuesta => respuesta.json())
+                .then(productos => {
+                    document.getElementById("contador").textContent =
+                        `Total: ${productos.length} productos`;
+
+                    const tabla = document.getElementById("tabla-body");
+                    tabla.innerHTML = "";
+
+                    productos.forEach(producto => {
+                        const fila = document.createElement("tr");
+
+                        fila.innerHTML = `
+                            <td>${producto.nombre || "-"}</td>
+                            <td>$ ${Number(producto.precio || 0).toLocaleString("es-CO")}</td>
+                            <td>${producto.marca || "-"}</td>
+                            <td>${producto.categoria || "-"}</td>
+                            <td>${producto.stock ?? 0}</td>
+                            <td>
+                                <span class="badge-${producto.activo}">
+                                    ${producto.activo ? "Activo" : "Inactivo"}
+                                </span>
+                            </td>
+                        `;
+
+                        tabla.appendChild(fila);
+                    });
+                })
+                .catch(error => {
+                    document.getElementById("contador").textContent =
+                        `Error: ${error.message}`;
+                });
+        }
+
+        async function agregarProducto() {
+            const mensaje = document.getElementById("mensaje");
+
+            const producto = {
+                nombre: document.getElementById("nombre").value.trim(),
+                precio: Number(document.getElementById("precio").value),
+                marca: document.getElementById("marca").value.trim(),
+                categoria: document.getElementById("categoria").value.trim(),
+                stock: Number(document.getElementById("stock").value || 0),
+                activo: true
+            };
+
+            if (!producto.nombre || !producto.precio || !producto.categoria) {
+                mensaje.className = "error";
+                mensaje.textContent =
+                    "Debes completar nombre, precio y categoría.";
+                return;
+            }
+
+            try {
+                const respuesta = await fetch("/api/productos", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(producto)
+                });
+
+                const resultado = await respuesta.json();
+
+                if (!respuesta.ok) {
+                    throw new Error(
+                        resultado.error || "No fue posible guardar el producto"
+                    );
+                }
+
+                mensaje.className = "exito";
+                mensaje.textContent = "Producto agregado correctamente.";
+
+                document.getElementById("nombre").value = "";
+                document.getElementById("precio").value = "";
+                document.getElementById("marca").value = "";
+                document.getElementById("categoria").value = "";
+                document.getElementById("stock").value = "";
+
+                cargarProductos();
+
+            } catch (error) {
+                mensaje.className = "error";
+                mensaje.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        cargarProductos();
+    </script>
+
+</body>
+
+</html>
